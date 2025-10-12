@@ -2,6 +2,7 @@
 #include <vector>
 #include <random>
 #include <ctime>
+#include <cmath>
 #include "coordinate.h"
 
 void add_coordinate(Coordinate **head, float x, float y)//adds a coordinate to the end of the linked list
@@ -37,20 +38,106 @@ void backward_display(Coordinate *front)// displays all coordinates from end to 
     
     while(current != nullptr)
     {
-        std::cout<< "x-value: "<< current->x << " y-value: "<< current->y <<" coord_id: "<< current->coord_id << std::endl;
+        std::cout << current->x << ", "<< current->y <<" coord_id: "<< current->coord_id << std::endl;
         current = current->prev;
     }
 }
 
-void delete_coordinate(Coordinate *list_beginning, int coord_id_to_delete)//removes a coordinate from the linked list (free memory!)
+void delete_coordinate(Coordinate **front, int coord_id_to_delete)//removes a coordinate from the linked list (free memory!)
 {
 
-}
-int list_length(Coordinate *list_beginning)//return the length of the list
-{
+    Coordinate* current = *front;
 
+    while(current != nullptr)
+    {
+        if(current->coord_id == coord_id_to_delete)
+        {
+            auto prevNode = current->prev;
+            if(prevNode != nullptr)
+            {
+                prevNode->next = current->next;//updating the previous and next pointers.
+            }
+            else
+            {
+                *front = current->next;
+
+            }
+            auto nextNode = current->next;
+            if(nextNode != nullptr)
+                nextNode->prev = prevNode;
+
+
+            delete current;
+            std::cout << "deleting coordinate: "<< coord_id_to_delete << std::endl;
+            break;
+        }
+        
+        current = current->next;
+
+    }
 }
-void closest_to(Coordinate *list_beginning, float x, float y);//find the coordinate that is closest to the given x, y and output the distance between the 2
+int list_length(Coordinate *front)//return the length of the list
+{
+    int count = 0;
+    auto current = front; 
+
+    while (current != nullptr)
+    {
+        count++;
+        current = current->next;
+    }
+    return count;
+}
+
+
+float calc_dist(float x, float x2, float y, float y2)
+{
+    float xdifference = (x2 - x);
+    float ydifference = (y2 - y);
+
+    float distance = std::sqrt((std::pow(xdifference, 2)) + (std::pow(ydifference, 2)));
+
+    return distance;
+}
+
+
+void closest_to(Coordinate *front, float x, float y)//find the coordinate that is closest to the given x, y and output the distance between the 2
+{
+    auto current = front;
+    auto dist = std::numeric_limits<float>::max();
+    auto closestId = -1;
+
+    while (current != nullptr)
+    {
+        auto tempDist = calc_dist(current->x, current->y,x,y);
+        std::cout << "distance for id " << current->coord_id << ": " << tempDist << std::endl;
+        if(tempDist < dist)
+        {
+            dist = tempDist;
+            closestId = current->coord_id;
+        }
+        current = current->next;
+    }
+
+    if (closestId >= 0) {
+        std::cout << "Closest coord to ( " << x << ", " << y << " ) is id: " << closestId
+                  << "  Distance: " << dist << std::endl;
+    } else {
+        std::cout << "No nearest coordinate found." << std::endl;
+    }
+}
+
+void free_memory(Coordinate *front)
+{
+    Coordinate* current = front;
+    while(current != nullptr)
+    {
+        auto next = current->next;
+        delete current;
+        current = next;
+    }
+    std::cout << "linked list memory successfully deleted. "<< std::endl;
+}
 
 int main(int argc, char **argv){
 
@@ -64,12 +151,13 @@ int main(int argc, char **argv){
         return 1;
     }
 
-
     auto numCoords = std::atoi(argv[1]);
 
     Coordinate* front = nullptr;
     Coordinate* head = nullptr;
-    for (auto i = 0; i < numCoords; i++)
+
+
+    for (auto i = 0; i < numCoords; i++)//Generating coordinates bound by the range of 0 to 255.
     {
         // make random x
         auto x = std::rand() % 255;
@@ -92,12 +180,30 @@ int main(int argc, char **argv){
     forward_display(front);
     std::cout << "======================"<<std::endl;
     backward_display(front);
+    std::cout << "======================"<<std::endl;
 
-    
-    //std::cout << "the amount of x & y-values you requested: "<<x<<std::endl;
+    auto coord_id_to_delete = 1;
+    delete_coordinate(&front, coord_id_to_delete);
+    forward_display(front);
+    //Testing corner cases at the front and tail of my list. 
+    coord_id_to_delete = 4;
+    delete_coordinate(&front, coord_id_to_delete);
+    forward_display(front);
+    coord_id_to_delete = 0;
+    delete_coordinate(&front, coord_id_to_delete);
+    forward_display(front);
 
+    std::cout << "======================"<<std::endl;
+    std::cout << "List length: " << list_length(front)<<std::endl;
 
-
+    std::cout << "======================"<<std::endl;
+        // make random x
+    auto x = std::rand() % 255;
+    // make random y
+    auto y = std::rand() % 255;
+    closest_to(front, x, y);
+    std::cout << "======================"<<std::endl;
+    free_memory(front);
 
     return 0;
 }
